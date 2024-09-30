@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -92,24 +93,35 @@ namespace Trev3d.Quest.ScreenCapture
 			OnNewFrameIncoming.Invoke();
 		}
 
-		private unsafe void NewFrameAvailable()
-		{
-			if (imageData == default) return;
-			screenTexture.LoadRawTextureData((IntPtr)imageData, bufferSize);
-			screenTexture.Apply();
+        private unsafe void NewFrameAvailable()
+        {
+            if (imageData == default) return;
+            screenTexture.LoadRawTextureData((IntPtr)imageData, bufferSize);
+            screenTexture.Apply();
 
-			if (flipTextureOnGPU)
-			{
-				Graphics.Blit(screenTexture, flipTexture, new Vector2(1, -1), Vector2.zero);
-				Graphics.CopyTexture(flipTexture, screenTexture);
-			}
+            if (flipTextureOnGPU)
+            {
+                Graphics.Blit(screenTexture, flipTexture, new Vector2(1, -1), Vector2.zero);
+                Graphics.CopyTexture(flipTexture, screenTexture);
+            }
 
-			OnNewFrame.Invoke();
-		}
+            OnNewFrame.Invoke();
 
-		private void ScreenCaptureStopped()
+            // Save a screenshot of the current frame
+            SaveScreenshot(Path.Combine(Application.persistentDataPath, "screenshot.png"));
+        }
+
+
+        private void ScreenCaptureStopped()
 		{
 			OnScreenCaptureStopped.Invoke();
 		}
-	}
+
+        public void SaveScreenshot(string filePath)
+        {
+            byte[] bytes = screenTexture.EncodeToPNG();
+            File.WriteAllBytes(filePath, bytes);
+            Debug.Log($"Screenshot saved to {filePath}");
+        }
+    }
 }
